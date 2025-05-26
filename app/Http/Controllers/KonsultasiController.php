@@ -13,7 +13,7 @@ class KonsultasiController extends Controller
     public function index()
     {
         //
-        return response()->json(konsultasi::all());
+        return response()->json(konsultasi::with('consultation')->get());
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\kunjungan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class KunjunganController extends Controller
 {
@@ -24,11 +25,20 @@ class KunjunganController extends Controller
     public function store(Request $request)
     {
         //
-        $data = kunjungan::create($request->all());
-        return response()->json([
-            'message' => 'success Add Visiting',
-            'data' => $data
+        $data = $request->validate([
+            "tanggal" => "required",
+            "keluhan" => "required",
+            "diagnosa" => "required",
+            "tindakan" => "required",
+            "jam" => "required"
         ]);
+
+        $data['user_id'] = Auth::id();
+
+        $data = kunjungan::create($data);
+
+        return response()->json([$data]);
+
     }
 
 
@@ -51,12 +61,25 @@ class KunjunganController extends Controller
      */
     public function update(Request $request, string $id)
     {      
-        $kunjungan = kunjungan::findOrFail($id);
-        $kunjungan->update($request->all());  // panggil update() pada instance
+          $user = Auth::user();
+
+    if ($user->role !== 'petugas') {
         return response()->json([
-            'message' => 'updated',
-            'data' => $kunjungan
-        ]);
+            'message' => 'Unauthorized – hanya petugas yang diizinkan.'
+        ], 403);
+    }
+
+    $kunjungan = kunjungan::findOrFail($id);
+
+    $data = $request->except('petugas_id');
+    $data['petugas_id'] = $user->id;
+
+    $kunjungan->update($data);
+
+    return response()->json([
+        'message' => 'updated',
+        'data' => $kunjungan
+    ]);
     }
 
 
